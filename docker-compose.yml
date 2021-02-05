@@ -1,0 +1,54 @@
+version: '3'
+services:
+  php-fpm:
+    build: 
+        args:
+          user: user
+          uid: 1000
+        context: ./build/php-fpm
+        dockerfile: Dockerfile
+    restart: always
+    volumes:
+      - ./application:/var/www
+    image: travellist
+    links:
+      - mysql
+    working_dir: /var/www/
+    networks:
+      - dock-net
+  nginx:
+    image:  nginx:alpine
+    restart: always
+    ports:
+      - "8001:80"
+    depends_on:
+      - php-fpm
+      - mysql
+    volumes:
+      - ./application:/var/www
+      - ./build/nginx:/etc/nginx/conf.d
+
+    links:
+      - php-fpm
+    networks:
+      - dock-net
+
+  mysql:
+    image: mysql:5.7
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_ROOT_HOST=%
+    restart: always
+    volumes:
+      - ./build/mysql/data:/var/lib/mysql
+      - ./build/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - dock-net
+
+networks:
+  dock-net:
+    driver: bridge
+
+
